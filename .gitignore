@@ -1,0 +1,24 @@
+# Sistema operativo
+.DS_Store
+Thumbs.db
+*~
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Node (por si mas adelante se agrega un build)
+node_modules/
+npm-debug.log*
+
+# Netlify CLI
+.netlify/
+
+# Config de Apache/Hostinger: Netlify la ignora. El deploy unificado de todos
+# los proyectos es git push -> Netlify, configurado en netlify.toml.
+# Se conserva en disco por si el sitio se sirve desde Hostinger algun dia.
+.htaccess
+
+# Claude Code local
+.claude/settings.local.json

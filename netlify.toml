@@ -1,0 +1,47 @@
+# ============================================================================
+# netlify.toml — Graficador de Campos
+# Sitio estatico sin build step. La raiz del repo es la raiz del sitio.
+# ============================================================================
+#
+# Nota sobre cache: Netlify sirve cada deploy de forma ATOMICA e invalida su
+# cache de borde en cada publicacion. El clasico "subi cambios pero sigo viendo
+# lo viejo" no pasa aca. Este archivo define HEADERS (seguridad + cache largo
+# para media), no cache-busting.
+#
+# El .htaccess del repo es de Apache/Hostinger: Netlify lo ignora por completo.
+# Se conserva solo por si el sitio se sirve tambien desde Hostinger.
+
+[build]
+  publish = "."
+  # Sin comando: no hay nada que compilar.
+  command = ""
+
+# ----- Headers de seguridad en todo -----
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# ----- HTML: revalidar siempre -----
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# ----- Librerias vendorizadas: cache largo (three, gsap, lenis) -----
+[[headers]]
+  for = "/lib/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# ----- Media y fuentes: cache largo -----
+[[headers]]
+  for = "/*.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
+[[headers]]
+  for = "/*.woff2"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>∇armandocf — Graficador de campos vectoriales</title>
+  <meta name="description" content="Graficá campos vectoriales en el plano (ℝ²) y en el espacio (ℝ³). Una herramienta científica clara y agradable, estilo GeoGebra, para estudiar cálculo vectorial." />
+  <meta name="theme-color" content="#f5f1e8" />
+
+  <!-- Favicon: nabla en SVG embebido -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232f6f6b'/%3E%3Ctext x='16' y='23' font-size='22' text-anchor='middle' fill='%23f5f1e8' font-family='Georgia,serif'%3E%E2%88%87%3C/text%3E%3C/svg%3E" />
+
+  <!-- Fuentes: STIX Two Text (serif científica, aire LaTeX) + JetBrains Mono (expresiones) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+
+  <link rel="stylesheet" href="styles.css?v=20260719" />
+
+  <!-- Anti-FOUC mínimo: fija el tema antes de pintar -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("vcf-theme") || "system";
+        var dark = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme-pref", t);
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+
+  <!-- ===== Splash (doble red de seguridad: CSS 4.5s + JS) ===== -->
+  <div class="splash" data-splash aria-hidden="true">
+    <div class="splash__mark">∇</div>
+    <div class="splash__word">armandocf</div>
+  </div>
+
+  <a class="skip-link" href="#graficador">Saltar al graficador</a>
+
+  <!-- ===== Nav ===== -->
+  <header class="nav" data-nav>
+    <a class="nav__brand" href="#graficador" aria-label="∇armandocf, inicio">
+      <span class="nav__nabla">∇</span><span class="nav__brandtxt">armandocf</span>
+    </a>
+    <nav class="nav__links" aria-label="Secciones">
+      <a href="#graficador">Graficador</a>
+      <a href="#como-usar">Cómo usar</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav__tools">
+      <button class="theme-toggle" data-theme-toggle type="button" aria-label="Cambiar tema" title="Tema: claro / oscuro / sistema">
+        <span class="theme-toggle__icon" aria-hidden="true"></span>
+        <span class="theme-toggle__txt" data-theme-label>Sistema</span>
+      </button>
+      <a class="nav__ig" href="https://instagram.com/varmandocf" target="_blank" rel="noopener" aria-label="Instagram @varmandocf">@varmandocf</a>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- ============================================================
+         SECCIÓN 1 — GRAFICADOR (hero + app: el primer viewport mata)
+         ============================================================ -->
+    <section class="stage" id="graficador" aria-label="Graficador de campos vectoriales">
+
+      <!-- Lienzo 3D (se llena por JS; sin JS queda un fondo suave) -->
+      <div class="stage__canvas" data-canvas>
+        <div class="stage__nojs">
+          <p>Activá JavaScript para usar el graficador 3D. El resto de la página se lee igual.</p>
+        </div>
+      </div>
+
+      <!-- Encabezado editorial sobre el lienzo -->
+      <div class="stage__intro">
+        <p class="stage__kicker">Software científico · cálculo vectorial</p>
+        <h1 class="stage__title"><span class="stage__nabla">∇</span>armandocf</h1>
+        <p class="stage__tagline">Diseñado para trascender</p>
+        <p class="stage__lede">Graficá campos vectoriales en el <strong>plano</strong> y en el <strong>espacio</strong>. Escribí un campo, elegí un ejemplo, y velo cobrar forma.</p>
+      </div>
+
+      <!-- Panel de control (glass) -->
+      <aside class="panel" data-panel aria-label="Controles del graficador">
+
+        <!-- Salto ℝ² / ℝ³ -->
+        <div class="panel__modes" role="group" aria-label="Dimensión del campo">
+          <button class="mode-btn" data-mode="2d" type="button">ℝ² · plano</button>
+          <button class="mode-btn is-active" data-mode="3d" type="button">ℝ³ · espacio</button>
+          <span class="mode-btn__glow" data-mode-glow aria-hidden="true"></span>
+        </div>
+
+        <!-- Campo bonito (renderizado) -->
+        <div class="field-pretty" data-field-pretty aria-hidden="true">
+          <span class="field-pretty__lhs">F</span>
+          <span class="field-pretty__eq">=</span>
+          <span class="field-pretty__body">…</span>
+        </div>
+
+        <!-- Componentes -->
+        <div class="fields">
+          <label class="field">
+            <span class="field__badge">P <em>î</em></span>
+            <input class="field__input" data-comp="P" type="text" inputmode="text"
+                   spellcheck="false" autocomplete="off" value="-y" aria-label="Componente P (en x)" />
+          </label>
+          <label class="field">
+            <span class="field__badge">Q <em>ĵ</em></span>
+            <input class="field__input" data-comp="Q" type="text" inputmode="text"
+                   spellcheck="false" autocomplete="off" value="x" aria-label="Componente Q (en y)" />
+          </label>
+          <label class="field field--z" data-field-z>
+            <span class="field__badge">R <em>k̂</em></span>
+            <input class="field__input" data-comp="R" type="text" inputmode="text"
+                   spellcheck="false" autocomplete="off" value="0.4*z" aria-label="Componente R (en z)" />
+          </label>
+        </div>
+
+        <p class="panel__err" data-error aria-live="polite"></p>
+
+        <!-- Teclado matemático -->
+        <div class="keypad" data-keypad aria-label="Teclado matemático">
+          <button type="button" data-ins="x">x</button>
+          <button type="button" data-ins="y">y</button>
+          <button type="button" data-ins="z" data-z-key>z</button>
+          <button type="button" data-ins="+">+</button>
+          <button type="button" data-ins="-">−</button>
+          <button type="button" data-ins="*">×</button>
+          <button type="button" data-ins="/">÷</button>
+          <button type="button" data-ins="^">^</button>
+          <button type="button" data-ins="(">(</button>
+          <button type="button" data-ins=")">)</button>
+          <button type="button" data-ins="sin(">sin</button>
+          <button type="button" data-ins="cos(">cos</button>
+          <button type="button" data-ins="tan(">tan</button>
+          <button type="button" data-ins="exp(">eˣ</button>
+          <button type="button" data-ins="sqrt(">√</button>
+          <button type="button" data-ins="ln(">ln</button>
+          <button type="button" data-ins="abs(">|·|</button>
+          <button type="button" data-ins="pi">π</button>
+          <button class="keypad__back" type="button" data-key-back aria-label="Borrar">⌫</button>
+          <button class="keypad__clear" type="button" data-key-clear aria-label="Limpiar campo">C</button>
+        </div>
+
+        <!-- Deslizadores -->
+        <div class="sliders">
+          <label class="slider">
+            <span class="slider__top"><span>Densidad</span><span data-out="density">9</span></span>
+            <input type="range" data-slider="density" min="5" max="17" step="2" value="9" />
+          </label>
+          <label class="slider">
+            <span class="slider__top"><span>Escala de flechas</span><span data-out="scale">1.0×</span></span>
+            <input type="range" data-slider="scale" min="0.3" max="2.2" step="0.1" value="1" />
+          </label>
+          <label class="slider">
+            <span class="slider__top"><span>Dominio</span><span data-out="domain">±5</span></span>
+            <input type="range" data-slider="domain" min="2" max="10" step="1" value="5" />
+          </label>
+        </div>
+
+        <!-- Interruptores -->
+        <div class="switches">
+          <button class="switch is-on" data-toggle="normalize" type="button" aria-pressed="true">
+            <span class="switch__dot"></span> Normalizar
+          </button>
+          <button class="switch is-on" data-toggle="rotate" type="button" aria-pressed="true">
+            <span class="switch__dot"></span> Girar
+          </button>
+          <button class="switch is-on" data-toggle="axes" type="button" aria-pressed="true">
+            <span class="switch__dot"></span> Ejes
+          </button>
+        </div>
+
+        <div class="panel__actions">
+          <button class="btn btn--ghost" data-action="reset" type="button">Centrar vista</button>
+        </div>
+
+        <!-- Ejemplos -->
+        <div class="examples">
+          <p class="examples__title">Ejemplos</p>
+          <div class="examples__row" data-examples>
+            <!-- se llena por JS (idempotente) -->
+          </div>
+        </div>
+      </aside>
+
+      <!-- Lectura de magnitud -->
+      <div class="stage__readout" data-readout aria-hidden="true">|F| máx <b data-maxmag>—</b></div>
+
+      <!-- Tarjeta de bienvenida (descartable) -->
+      <div class="onboard" data-onboard>
+        <button class="onboard__close" data-onboard-close type="button" aria-label="Cerrar">✕</button>
+        <p class="onboard__title">Bienvenido/a 👋</p>
+        <ul class="onboard__list" data-onboard-list></ul>
+        <button class="btn btn--solid onboard__go" data-onboard-close type="button">Empezar</button>
+      </div>
+
+      <!-- Hint de scroll -->
+      <a class="stage__scroll" href="#como-usar" aria-label="Cómo usar">
+        <span>Cómo usar</span><span class="stage__scroll-arrow" aria-hidden="true">↓</span>
+      </a>
+    </section>
+
+    <!-- ============================================================
+         SECCIÓN 2 — CÓMO USAR
+         ============================================================ -->
+    <section class="howto" id="como-usar" aria-label="Cómo usar">
+      <div class="wrap">
+        <p class="sec-kicker reveal">En 30 segundos</p>
+        <h2 class="sec-title reveal">Cómo se usa</h2>
+        <div class="steps">
+          <article class="step reveal">
+            <span class="step__n">1</span>
+            <h3>Elegí plano o espacio</h3>
+            <p>Tocá <b>ℝ²</b> para trabajar en el plano, o <b>ℝ³</b> para el espacio. El salto es instantáneo y natural.</p>
+          </article>
+          <article class="step reveal">
+            <span class="step__n">2</span>
+            <h3>Escribí el campo</h3>
+            <p>Cargá cada componente: <b>P</b> en x, <b>Q</b> en y, <b>R</b> en z. Usá el teclado matemático si querés ir rápido.</p>
+          </article>
+          <article class="step reveal">
+            <span class="step__n">3</span>
+            <h3>Explorá</h3>
+            <p>Arrastrá para rotar, usá la rueda para acercarte. El <b>color</b> te dice la magnitud; <b>Normalizar</b> resalta la dirección.</p>
+          </article>
+          <article class="step reveal">
+            <span class="step__n">4</span>
+            <h3>Probá un ejemplo</h3>
+            <p>¿Sin ideas? Tocá un <b>ejemplo</b> del panel (rotacional, fuente, silla…) y estudiá su forma al instante.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECCIÓN 3 — FAQ (hardcodeado; se lee sin JS)
+         ============================================================ -->
+    <section class="faq" id="faq" aria-label="Preguntas frecuentes">
+      <div class="wrap wrap--narrow">
+        <p class="sec-kicker reveal">Dudas frecuentes</p>
+        <h2 class="sec-title reveal">Preguntas frecuentes</h2>
+        <div class="faq__list" data-faq>
+
+          <details class="faq__item reveal">
+            <summary>¿Qué es un campo vectorial?</summary>
+            <div class="faq__a"><p>Es una regla que a cada punto del plano o del espacio le asigna un vector (una flecha con dirección y magnitud). Por ejemplo, la velocidad del viento en cada punto de una habitación es un campo vectorial.</p></div>
+          </details>
+
+          <details class="faq__item reveal">
+            <summary>¿Cómo escribo el campo?</summary>
+            <div class="faq__a"><p>Escribís cada componente por separado: P es la componente en x, Q en y y R en z. Podés usar x, y, z, números y funciones como sin, cos, exp, sqrt. Ejemplo: P = −y, Q = x te da un remolino.</p></div>
+          </details>
+
+          <details class="faq__item reveal">
+            <summary>¿Qué diferencia hay entre ℝ² y ℝ³?</summary>
+            <div class="faq__a"><p>En ℝ² el campo vive en el plano (solo importan x e y) y lo mirás de arriba, como en una hoja. En ℝ³ el campo llena el espacio y podés rotarlo libremente. El botón ℝ²/ℝ³ salta entre ambos de forma natural, igual que en GeoGebra.</p></div>
+          </details>
+
+          <details class="faq__item reveal">
+            <summary>¿Qué operaciones puedo usar?</summary>
+            <div class="faq__a"><p>Suma +, resta −, producto *, división /, potencia ^, paréntesis ( ), y funciones: sin, cos, tan, exp, ln, log, sqrt, abs, asin, acos, atan, sinh, cosh, tanh. También las constantes pi y e.</p></div>
+          </details>
+
+          <details class="faq__item reveal">
+            <summary>¿Qué significa el color de las flechas?</summary>
+            <div class="faq__a"><p>El color codifica la magnitud del vector. Los tonos fríos son magnitudes chicas y los cálidos, magnitudes grandes. Así ves de un vistazo dónde el campo es más intenso.</p></div>
+          </details>
+
+          <details class="faq__item reveal">
+            <summary>¿Qué hace el botón "Normalizar"?</summary>
+            <div class="faq__a"><p>Pone todas las flechas del mismo largo para que se vea claramente la dirección del campo en cada punto, sin que las flechas largas tapen a las cortas. La magnitud la seguís leyendo por el color.</p></div>
+          </details>
+
+          <details class="faq__item reveal">
+            <summary>¿Necesito instalar algo?</summary>
+            <div class="faq__a"><p>No. Funciona en cualquier navegador moderno, incluso abriendo el archivo directamente. No hay cuentas, ni descargas, ni servidores.</p></div>
+          </details>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="foot">
+    <div class="wrap foot__grid">
+      <div>
+        <p class="foot__brand"><span class="stage__nabla">∇</span>armandocf</p>
+        <p class="foot__tag">Diseñado para trascender</p>
+      </div>
+      <div class="foot__meta">
+        <a href="https://instagram.com/varmandocf" target="_blank" rel="noopener">Instagram · @varmandocf</a>
+        <span data-version>v1.0</span>
+        <span>Cálculo vectorial, con calma.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== Scripts (classic defer, orden importa) ===== -->
+  <script defer src="lib/three.min.js"></script>
+  <script defer src="lib/gsap.min.js"></script>
+  <script defer src="lib/ScrollTrigger.min.js"></script>
+  <script defer src="lib/manifest.js?v=20260719"></script>
+  <script defer src="main.js?v=20260719"></script>
+</body>
+</html>
