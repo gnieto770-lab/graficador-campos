@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>∇armandocf — Graficador de campos vectoriales</title>
-  <meta name="description" content="Graficá campos vectoriales en el plano (ℝ²) y en el espacio (ℝ³). Una herramienta científica clara y agradable, estilo GeoGebra, para estudiar cálculo vectorial." />
+  <meta name="description" content="Graficá campos vectoriales en el plano (ℝ²) y en el espacio (ℝ³), y analizá ecuaciones diferenciales de primer orden con isoclinas, campos direccionales y curvas solución." />
   <meta name="theme-color" content="#f5f1e8" />
 
   <!-- Favicon: nabla en SVG embebido -->
@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" />
 
-  <link rel="stylesheet" href="styles.css?v=20260719" />
+  <link rel="stylesheet" href="styles.css?v=20260817" />
 
   <!-- Anti-FOUC mínimo: fija el tema antes de pintar -->
   <script>
@@ -46,6 +46,7 @@
     </a>
     <nav class="nav__links" aria-label="Secciones">
       <a href="#graficador">Graficador</a>
+      <a href="#isoclinas">Isoclinas</a>
       <a href="#como-usar">Cómo usar</a>
       <a href="#faq">FAQ</a>
     </nav>
@@ -202,7 +203,277 @@
     </section>
 
     <!-- ============================================================
-         SECCIÓN 2 — CÓMO USAR
+         SECCIÓN 2 — ISOCLINAS Y CAMPOS DIRECCIONALES (v1.1)
+         ============================================================ -->
+    <section class="ode" id="isoclinas" data-ode aria-label="Isoclinas y campos direccionales">
+      <div class="wrap">
+        <p class="sec-kicker reveal">Nuevo en v1.1 · ecuaciones diferenciales</p>
+        <h2 class="sec-title reveal">Isoclinas y campos direccionales</h2>
+        <p class="ode__lede reveal">
+          Escribí una <strong>EDO de primer orden</strong> —explícita, en forma diferencial o implícita—
+          y mirá su campo de direcciones, sus <strong>isoclinas</strong> y las curvas solución que pasan
+          por donde toques. Abajo, el diagnóstico de la ecuación se arma solo.
+        </p>
+
+        <div class="ode__layout reveal">
+
+          <!-- ----- Lienzo ----- -->
+          <div class="ode__main">
+            <div class="ode-pretty" data-ode-pretty aria-live="polite">…</div>
+
+            <div class="ode__stagewrap">
+              <div class="ode__canvas">
+                <canvas data-ode-canvas role="img"
+                        aria-label="Campo direccional e isoclinas de la ecuación diferencial"></canvas>
+              </div>
+              <div class="ode__tools">
+                <button type="button" data-ode-zoom="in"  aria-label="Acercar">+</button>
+                <button type="button" data-ode-zoom="out" aria-label="Alejar">−</button>
+                <button type="button" data-ode-reset aria-label="Centrar la vista">⌂</button>
+                <button type="button" data-ode-png aria-label="Descargar PNG">↓</button>
+              </div>
+            </div>
+
+            <div class="ode__bar">
+              <p class="ode-readout" data-ode-readout aria-live="off">
+                <span class="ode-readout__hint">Pasá el cursor por el lienzo</span>
+              </p>
+              <div class="ode-legend" data-ode-legend></div>
+            </div>
+
+            <p class="ode__tip">
+              Tocá el lienzo para poner una condición inicial · arrastrá para desplazar ·
+              rueda o pellizco para acercar · doble clic para centrar
+            </p>
+          </div>
+
+          <!-- ----- Panel ----- -->
+          <aside class="ode__panel" aria-label="Controles del módulo de isoclinas">
+
+            <!-- Forma de la ecuación -->
+            <div class="ode-forms" role="group" aria-label="Forma de la ecuación">
+              <button class="ode-form is-active" type="button" data-ode-form="explicit">Explícita</button>
+              <button class="ode-form" type="button" data-ode-form="differential">Diferencial</button>
+              <button class="ode-form" type="button" data-ode-form="implicit">Implícita</button>
+            </div>
+
+            <!-- Expresiones -->
+            <div class="ode-row" data-ode-row="explicit">
+              <label class="field">
+                <span class="field__badge">y′ =</span>
+                <input class="field__input" data-ode-src="f" type="text" spellcheck="false"
+                       autocomplete="off" aria-label="f de x e y" />
+              </label>
+            </div>
+
+            <div class="ode-row" data-ode-row="differential">
+              <label class="field">
+                <span class="field__badge">M <em>dx</em></span>
+                <input class="field__input" data-ode-src="M" type="text" spellcheck="false"
+                       autocomplete="off" aria-label="M de x e y" />
+              </label>
+              <label class="field">
+                <span class="field__badge">N <em>dy</em></span>
+                <input class="field__input" data-ode-src="N" type="text" spellcheck="false"
+                       autocomplete="off" aria-label="N de x e y" />
+              </label>
+              <p class="ode-hint">M dx + N dy = 0 · la pendiente es y′ = −M/N</p>
+            </div>
+
+            <div class="ode-row" data-ode-row="implicit">
+              <label class="field">
+                <span class="field__badge">G =</span>
+                <input class="field__input" data-ode-src="G" type="text" spellcheck="false"
+                       autocomplete="off" aria-label="G de x, y e y prima" />
+              </label>
+              <p class="ode-hint">G(x, y, y′) = 0 · escribí y′ (o p) para la derivada</p>
+            </div>
+
+            <p class="panel__err" data-ode-error aria-live="polite"></p>
+
+            <!-- Teclado -->
+            <div class="keypad" data-ode-keypad aria-label="Teclado matemático">
+              <button type="button" data-ins="x">x</button>
+              <button type="button" data-ins="y">y</button>
+              <button type="button" data-ins="y'">y′</button>
+              <button type="button" data-ins="a">a</button>
+              <button type="button" data-ins="b">b</button>
+              <button type="button" data-ins="+">+</button>
+              <button type="button" data-ins="-">−</button>
+              <button type="button" data-ins="*">×</button>
+              <button type="button" data-ins="/">÷</button>
+              <button type="button" data-ins="^">^</button>
+              <button type="button" data-ins="(">(</button>
+              <button type="button" data-ins=")">)</button>
+              <button type="button" data-ins="sin(">sin</button>
+              <button type="button" data-ins="cos(">cos</button>
+              <button type="button" data-ins="tan(">tan</button>
+              <button type="button" data-ins="exp(">eˣ</button>
+              <button type="button" data-ins="sqrt(">√</button>
+              <button type="button" data-ins="ln(">ln</button>
+              <button type="button" data-ins="abs(">|·|</button>
+              <button type="button" data-ins="pi">π</button>
+              <button class="keypad__back" type="button" data-key-back aria-label="Borrar">⌫</button>
+              <button class="keypad__clear" type="button" data-key-clear aria-label="Limpiar">C</button>
+            </div>
+
+            <!-- Parámetros -->
+            <details class="ode-group">
+              <summary>Parámetros a y b</summary>
+              <div class="sliders">
+                <label class="slider">
+                  <span class="slider__top"><span>a</span><span data-ode-out="a">1.00</span></span>
+                  <input type="range" data-ode-slider="a" min="-4" max="4" step="0.05" value="1" />
+                </label>
+                <label class="slider">
+                  <span class="slider__top"><span>b</span><span data-ode-out="b">1.00</span></span>
+                  <input type="range" data-ode-slider="b" min="-4" max="4" step="0.05" value="1" />
+                </label>
+              </div>
+              <p class="ode-hint">Usalos en las expresiones para mover familias enteras: <code>a*y*(1-y/b)</code>.</p>
+            </details>
+
+            <!-- Isoclinas -->
+            <details class="ode-group" open>
+              <summary>Isoclinas</summary>
+              <div class="switches">
+                <button class="switch" data-ode-toggle="iso" type="button">
+                  <span class="switch__dot"></span> Mostrar</button>
+                <button class="switch" data-ode-toggle="isoNull" type="button">
+                  <span class="switch__dot"></span> Nula (y′=0)</button>
+                <button class="switch" data-ode-toggle="isoVert" type="button">
+                  <span class="switch__dot"></span> Vertical</button>
+                <button class="switch" data-ode-toggle="isoLabels" type="button">
+                  <span class="switch__dot"></span> Etiquetas</button>
+                <button class="switch" data-ode-toggle="isoTicks" type="button">
+                  <span class="switch__dot"></span> Marcas</button>
+              </div>
+              <div class="sliders">
+                <label class="slider">
+                  <span class="slider__top"><span>Cantidad</span><span data-ode-out="isoCount">8</span></span>
+                  <input type="range" data-ode-slider="isoCount" min="2" max="21" step="1" value="8" />
+                </label>
+                <label class="slider">
+                  <span class="slider__top"><span>Rango de k</span><span data-ode-out="isoMax">±4</span></span>
+                  <input type="range" data-ode-slider="isoMax" min="0.5" max="12" step="0.5" value="4" />
+                </label>
+              </div>
+              <label class="field">
+                <span class="field__badge">k =</span>
+                <input class="field__input" data-ode-levels type="text" spellcheck="false"
+                       autocomplete="off" placeholder="niveles a mano: 0, 1, -1, 2" aria-label="Niveles de pendiente" />
+              </label>
+            </details>
+
+            <!-- Campo -->
+            <details class="ode-group" open>
+              <summary>Campo direccional</summary>
+              <div class="switches">
+                <button class="switch" data-ode-toggle="field" type="button">
+                  <span class="switch__dot"></span> Mostrar</button>
+                <button class="switch" data-ode-toggle="normalize" type="button">
+                  <span class="switch__dot"></span> Normalizar</button>
+                <button class="switch" data-ode-toggle="arrows" type="button">
+                  <span class="switch__dot"></span> Puntas</button>
+                <button class="switch" data-ode-toggle="colorSlope" type="button">
+                  <span class="switch__dot"></span> Color</button>
+                <button class="switch" data-ode-toggle="flow" type="button">
+                  <span class="switch__dot"></span> Animar</button>
+              </div>
+              <div class="sliders">
+                <label class="slider">
+                  <span class="slider__top"><span>Densidad</span><span data-ode-out="density">21×</span></span>
+                  <input type="range" data-ode-slider="density" min="7" max="45" step="2" value="21" />
+                </label>
+                <label class="slider">
+                  <span class="slider__top"><span>Largo</span><span data-ode-out="arrow">1.0×</span></span>
+                  <input type="range" data-ode-slider="arrow" min="0.3" max="1.8" step="0.1" value="1" />
+                </label>
+              </div>
+            </details>
+
+            <!-- Soluciones -->
+            <details class="ode-group" open>
+              <summary>Curvas solución</summary>
+              <div class="switches">
+                <button class="switch" data-ode-toggle="curves" type="button">
+                  <span class="switch__dot"></span> Mostrar</button>
+                <button class="switch" data-ode-toggle="clickAdd" type="button">
+                  <span class="switch__dot"></span> Clic agrega</button>
+                <button class="switch" data-ode-toggle="poly" type="button">
+                  <span class="switch__dot"></span> Poligonal</button>
+              </div>
+              <div class="ode-ic">
+                <label><span>x₀</span><input type="text" data-ode-ic="x" value="0" inputmode="decimal" /></label>
+                <label><span>y₀</span><input type="text" data-ode-ic="y" value="1" inputmode="decimal" /></label>
+                <button class="btn btn--solid" type="button" data-ode-add>Agregar</button>
+              </div>
+              <div class="ode-seeds" data-ode-seedlist></div>
+              <div class="ode-actions">
+                <button class="btn btn--ghost" type="button" data-ode-family>Familia</button>
+                <button class="btn btn--ghost" type="button" data-ode-clear>Limpiar</button>
+              </div>
+              <label class="ode-select">
+                <span>Método de la poligonal</span>
+                <select data-ode-method>
+                  <option value="rk4">Runge–Kutta 4</option>
+                  <option value="heun">Heun (RK2)</option>
+                  <option value="euler">Euler</option>
+                </select>
+              </label>
+              <div class="sliders">
+                <label class="slider">
+                  <span class="slider__top"><span>Paso</span><span data-ode-out="step">h = 0.50</span></span>
+                  <input type="range" data-ode-slider="step" min="0.05" max="1.5" step="0.05" value="0.5" />
+                </label>
+              </div>
+              <p class="ode-hint">La poligonal (punteada) compara el método elegido con la solución fina.
+                 Subí el paso con Euler y vas a ver el error acumularse.</p>
+            </details>
+
+            <!-- Ventana -->
+            <details class="ode-group">
+              <summary>Ventana y dibujo</summary>
+              <div class="ode-view">
+                <label><span>x mín</span><input type="text" data-ode-view="x0" inputmode="decimal" /></label>
+                <label><span>x máx</span><input type="text" data-ode-view="x1" inputmode="decimal" /></label>
+                <label><span>y mín</span><input type="text" data-ode-view="y0" inputmode="decimal" /></label>
+                <label><span>y máx</span><input type="text" data-ode-view="y1" inputmode="decimal" /></label>
+              </div>
+              <div class="switches">
+                <button class="switch" data-ode-toggle="square" type="button">
+                  <span class="switch__dot"></span> Escala 1:1</button>
+                <button class="switch" data-ode-toggle="grid" type="button">
+                  <span class="switch__dot"></span> Grilla</button>
+                <button class="switch" data-ode-toggle="axes" type="button">
+                  <span class="switch__dot"></span> Ejes</button>
+                <button class="switch" data-ode-toggle="equil" type="button">
+                  <span class="switch__dot"></span> Equilibrios</button>
+              </div>
+              <div class="sliders">
+                <label class="slider">
+                  <span class="slider__top"><span>Precisión de isoclinas</span><span data-ode-out="quality">150</span></span>
+                  <input type="range" data-ode-slider="quality" min="60" max="300" step="10" value="150" />
+                </label>
+              </div>
+            </details>
+
+            <!-- Ejemplos -->
+            <div class="examples">
+              <p class="examples__title">Ejemplos</p>
+              <div class="examples__row" data-ode-examples></div>
+            </div>
+          </aside>
+        </div>
+
+        <!-- ----- Diagnóstico ----- -->
+        <h3 class="ode__subtitle reveal">Diagnóstico de la ecuación</h3>
+        <div class="ode__analysis" data-ode-analysis></div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECCIÓN 3 — CÓMO USAR
          ============================================================ -->
     <section class="howto" id="como-usar" aria-label="Cómo usar">
       <div class="wrap">
@@ -234,7 +505,7 @@
     </section>
 
     <!-- ============================================================
-         SECCIÓN 3 — FAQ (hardcodeado; se lee sin JS)
+         SECCIÓN 4 — FAQ (hardcodeado; se lee sin JS)
          ============================================================ -->
     <section class="faq" id="faq" aria-label="Preguntas frecuentes">
       <div class="wrap wrap--narrow">
@@ -273,6 +544,26 @@
           </details>
 
           <details class="faq__item reveal">
+            <summary>¿Qué es una isoclina?</summary>
+            <div class="faq__a"><p>Es el conjunto de puntos donde la solución de una ecuación diferencial tiene siempre la misma pendiente. Si la ecuación es y′ = f(x, y), la isoclina de pendiente k es la curva f(x, y) = k. Dibujando varias y poniendo en cada una un peine de rayitas con esa inclinación, el campo direccional aparece solo: es el método clásico para resolver una EDO a mano, sin integrar nada.</p></div>
+          </details>
+
+          <details class="faq__item reveal">
+            <summary>¿Qué formas de ecuación acepta el módulo de isoclinas?</summary>
+            <div class="faq__a"><p>Tres. <b>Explícita</b>: y′ = f(x, y). <b>Diferencial</b>: M(x, y) dx + N(x, y) dy = 0, donde la pendiente es y′ = −M/N (y las tangentes verticales aparecen solas donde N = 0). <b>Implícita</b>: G(x, y, y′) = 0, que se resuelve numéricamente en cada punto; si tiene varias raíces vas a ver un campo con varias ramas, como en las ecuaciones de Clairaut.</p></div>
+          </details>
+
+          <details class="faq__item reveal">
+            <summary>¿Cómo se dibujan las curvas solución?</summary>
+            <div class="faq__a"><p>Tocás el lienzo y ahí ponés una condición inicial. La curva se integra con Runge–Kutta de cuarto orden <em>por longitud de arco</em>, hacia adelante y hacia atrás: por eso atraviesa tangentes verticales y puntos de retorno sin cortarse, cosa que no pasaría integrando en x. Aparte podés superponer la poligonal de Euler, Heun o RK4 con un paso h a elección para ver cuánto se aleja del resultado fino.</p></div>
+          </details>
+
+          <details class="faq__item reveal">
+            <summary>¿Qué es el diagnóstico automático?</summary>
+            <div class="faq__a"><p>Debajo del lienzo la página revisa numéricamente la ecuación que escribiste y te dice qué tenés entre manos: si es separable, lineal, homogénea de grado 0, autónoma (con sus equilibrios y la estabilidad de cada uno), si la forma diferencial es exacta o admite un factor integrante μ(x) o μ(y), y si se cumplen las hipótesis de Picard–Lindelöf para que la solución sea única. Son pruebas numéricas sobre la ventana visible, así que valen como orientación y no como demostración.</p></div>
+          </details>
+
+          <details class="faq__item reveal">
             <summary>¿Necesito instalar algo?</summary>
             <div class="faq__a"><p>No. Funciona en cualquier navegador moderno, incluso abriendo el archivo directamente. No hay cuentas, ni descargas, ni servidores.</p></div>
           </details>
@@ -291,7 +582,7 @@
       </div>
       <div class="foot__meta">
         <a href="https://instagram.com/varmandocf" target="_blank" rel="noopener">Instagram · @varmandocf</a>
-        <span data-version>v1.0</span>
+        <span data-version>v1.1</span>
         <span>Cálculo vectorial, con calma.</span>
       </div>
     </div>
@@ -301,7 +592,9 @@
   <script defer src="lib/three.min.js"></script>
   <script defer src="lib/gsap.min.js"></script>
   <script defer src="lib/ScrollTrigger.min.js"></script>
-  <script defer src="lib/manifest.js?v=20260719"></script>
-  <script defer src="main.js?v=20260719"></script>
+  <script defer src="lib/manifest.js?v=20260817"></script>
+  <script defer src="mathexpr.js?v=20260817"></script>
+  <script defer src="main.js?v=20260817"></script>
+  <script defer src="ode.js?v=20260817"></script>
 </body>
 </html>

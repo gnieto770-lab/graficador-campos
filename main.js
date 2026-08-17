@@ -13,123 +13,9 @@
 
   /* =============================================================
      1. Parser de expresiones matemáticas → f(x, y, z)
-        Tokenizer + Shunting-yard → RPN → intérprete de pila.
-        No usa eval ni new Function.
+        Vive en mathexpr.js (compartido con el módulo de EDOs).
      ============================================================= */
-  const FUNCS = {
-    sin: Math.sin, cos: Math.cos, tan: Math.tan,
-    asin: Math.asin, acos: Math.acos, atan: Math.atan,
-    sinh: Math.sinh, cosh: Math.cosh, tanh: Math.tanh,
-    exp: Math.exp, ln: Math.log, log: Math.log,
-    sqrt: Math.sqrt, abs: Math.abs, sign: Math.sign,
-    floor: Math.floor, ceil: Math.ceil, round: Math.round
-  };
-  const CONSTS = { pi: Math.PI, e: Math.E };
-  const OPS = {
-    "+": { prec: 2, assoc: "L", fn: (a, b) => a + b },
-    "-": { prec: 2, assoc: "L", fn: (a, b) => a - b },
-    "*": { prec: 3, assoc: "L", fn: (a, b) => a * b },
-    "/": { prec: 3, assoc: "L", fn: (a, b) => a / b },
-    "^": { prec: 4, assoc: "R", fn: (a, b) => Math.pow(a, b) }
-  };
-
-  function tokenize(str) {
-    const t = []; let i = 0; const s = str.replace(/\s+/g, "");
-    const isDigit = c => c >= "0" && c <= "9";
-    const isAlpha = c => (c >= "a" && c <= "z") || (c >= "A" && c <= "Z") || c === "_";
-    while (i < s.length) {
-      const c = s[i];
-      if (isDigit(c) || (c === "." && isDigit(s[i + 1]))) {
-        let num = ""; while (i < s.length && (isDigit(s[i]) || s[i] === ".")) num += s[i++];
-        t.push({ type: "num", value: parseFloat(num) }); continue;
-      }
-      if (isAlpha(c)) {
-        let id = ""; while (i < s.length && (isAlpha(s[i]) || isDigit(s[i]))) id += s[i++];
-        if (s[i] === "(" && FUNCS[id]) t.push({ type: "func", value: id });
-        else if (id === "x" || id === "y" || id === "z") t.push({ type: "var", value: id });
-        else if (CONSTS[id] != null) t.push({ type: "num", value: CONSTS[id] });
-        else if (FUNCS[id]) t.push({ type: "func", value: id });
-        else throw new Error("desconocido: " + id);
-        continue;
-      }
-      if (c in OPS) { t.push({ type: "op", value: c }); i++; continue; }
-      if (c === "(") { t.push({ type: "lp" }); i++; continue; }
-      if (c === ")") { t.push({ type: "rp" }); i++; continue; }
-      if (c === ",") { t.push({ type: "comma" }); i++; continue; }
-      throw new Error("símbolo: " + c);
-    }
-    return t;
-  }
-
-  // Inserta multiplicación implícita (2x, xy, )(, x(...)) y unarios +/-
-  function normalize(tokens) {
-    const out = [];
-    for (let i = 0; i < tokens.length; i++) {
-      const tk = tokens[i], prev = out[out.length - 1];
-      // unario: - o + al inicio o tras op/lp/comma → 0 - a
-      if (tk.type === "op" && (tk.value === "-" || tk.value === "+")) {
-        const start = !prev || prev.type === "op" || prev.type === "lp" || prev.type === "comma";
-        if (start) { out.push({ type: "num", value: 0 }); out.push(tk); if (prev && prev.type === "op") {} ; }
-        else { out.push(tk); }
-        continue;
-      }
-      // multiplicación implícita
-      if (prev) {
-        const prevEnd = prev.type === "num" || prev.type === "var" || prev.type === "rp";
-        const curStart = tk.type === "num" || tk.type === "var" || tk.type === "func" || tk.type === "lp";
-        if (prevEnd && curStart) out.push({ type: "op", value: "*" });
-      }
-      out.push(tk);
-    }
-    return out;
-  }
-
-  function toRPN(tokens) {
-    const out = [], stack = [];
-    for (const tk of tokens) {
-      if (tk.type === "num" || tk.type === "var") out.push(tk);
-      else if (tk.type === "func") stack.push(tk);
-      else if (tk.type === "op") {
-        while (stack.length) {
-          const top = stack[stack.length - 1];
-          if (top.type === "op" &&
-             (OPS[top.value].prec > OPS[tk.value].prec ||
-             (OPS[top.value].prec === OPS[tk.value].prec && OPS[tk.value].assoc === "L"))) {
-            out.push(stack.pop());
-          } else break;
-        }
-        stack.push(tk);
-      } else if (tk.type === "lp") stack.push(tk);
-      else if (tk.type === "rp") {
-        while (stack.length && stack[stack.length - 1].type !== "lp") out.push(stack.pop());
-        if (!stack.length) throw new Error("paréntesis");
-        stack.pop();
-        if (stack.length && stack[stack.length - 1].type === "func") out.push(stack.pop());
-      }
-    }
-    while (stack.length) { const s = stack.pop(); if (s.type === "lp") throw new Error("paréntesis"); out.push(s); }
-    return out;
-  }
-
-  // Compila a función (x,y,z) => number ejecutando la RPN sobre una pila.
-  function compile(expr) {
-    if (!expr || !expr.trim()) return () => 0;
-    const rpn = toRPN(normalize(tokenize(expr)));
-    // validación rápida evaluando en (1,1,1)
-    const fn = (x, y, z) => {
-      const st = [];
-      for (const tk of rpn) {
-        if (tk.type === "num") st.push(tk.value);
-        else if (tk.type === "var") st.push(tk.value === "x" ? x : tk.value === "y" ? y : z);
-        else if (tk.type === "op") { const b = st.pop(), a = st.pop(); st.push(OPS[tk.value].fn(a, b)); }
-        else if (tk.type === "func") { const a = st.pop(); st.push(FUNCS[tk.value](a)); }
-      }
-      if (st.length !== 1) throw new Error("expresión incompleta");
-      return st[0];
-    };
-    fn(1, 0.5, -0.3); // dispara errores estructurales ya
-    return fn;
-  }
+  const compile = (expr) => window.VCFMath.compile(expr, ["x", "y", "z"]);
 
   /* =============================================================
      2. Colormap calmo (frío → cálido) por magnitud
@@ -724,6 +610,8 @@
       if (label) label.textContent = names[pref];
       try { localStorage.setItem("vcf-theme", pref); } catch (e) {}
       if (Scene.ok) Scene.refreshTheme();
+      // Aviso para otros módulos (ode.js repinta su lienzo 2D)
+      window.dispatchEvent(new CustomEvent("vcf:theme", { detail: { dark } }));
     };
     let cur = document.documentElement.getAttribute("data-theme-pref") || "system";
     apply(cur);
